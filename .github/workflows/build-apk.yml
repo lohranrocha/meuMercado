@@ -1,0 +1,50 @@
+name: Gerar APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+
+      - name: Instalar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compilar APK
+        run: |
+          chmod +x ./gradlew
+          ./gradlew assembleRelease --stacktrace
+
+      - name: Renomear APK
+        run: cp app/build/outputs/apk/release/app-release.apk ListaDeCompras.apk
+
+      - name: Guardar APK no build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ListaDeCompras-apk
+          path: ListaDeCompras.apk
+
+      - name: Publicar versão para download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Lista de Compras 1.0.${{ github.run_number }}
+          body: |
+            APK gerado automaticamente a partir do commit ${{ github.sha }}.
+            Baixe o arquivo **ListaDeCompras.apk** abaixo e abra no celular para instalar.
+          files: ListaDeCompras.apk
+          make_latest: true
